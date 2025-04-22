@@ -50,9 +50,9 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void fill_line(uint32_t line_num);
+void fill_lines(uint32_t line_num);
 void init_led(void);
-void fill_all_lines(void);
+void refresh_frame(void);
 void led_crawler(void);
 /* USER CODE END PFP */
 

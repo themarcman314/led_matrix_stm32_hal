@@ -30,7 +30,7 @@ void init_led(void)
 	my_frame.top[0].r = 0x80000000;
 }
 
-void fill_line(uint32_t line_num)
+void fill_lines(uint32_t line_num)
 {
 	set_line(line_num);
 	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_SET); // deactivate led matrix
@@ -57,11 +57,11 @@ void set_line(uint32_t line_num)
 	HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, line_num & 0b100);
 }
 
-void fill_all_lines(void)
+void refresh_frame(void)
 {
 	for(uint32_t index = 0; index < 8; index++)
 	{
-		  fill_line(index);
+		  fill_lines(index);
 	}
 }
 void led_crawler(void)
@@ -69,25 +69,21 @@ void led_crawler(void)
 	static uint32_t line_index = 0;
 	static uint32_t direction = 0;
 
-	fill_all_lines();
+	refresh_frame();
 
+	struct line* line = my_frame.top; // start at top of display
+	uint32_t index = line_index % 16; // run through 16 lines in loop
 
-	struct line* lines = my_frame.top;
-	uint32_t index = line_index % 16;
-
-	if (!direction && lines[index].r != 1)
-		lines[index].r >>= 1;
-	else if (direction && lines[index].r != 0x80000000)
-		lines[index].r <<= 1;
+	// we can do this since top and bottom data is contiguous in memory
+	if (!direction && line[index].r != 1)
+		line[index].r >>= 1;
+	else if (direction && line[index].r != 0x80000000)
+		line[index].r <<= 1;
 	else
 	{
-		line_index++;
-		if(line_index == 8);
-			//lines = my_frame.bottom;
-		direction = !direction;
-		lines[(index + 1) % 16].r = lines[index].r;
-		lines[index].r = 0;
-
+		line_index++;								// go to new line
+		direction = !direction; 					// change direction
+		line[(index + 1) % 16].r = line[index].r; 	// stay on same same x coordinate
+		line[index].r = 0;							// turn off led on previous line
 	}
-
 }
