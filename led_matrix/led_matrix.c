@@ -10,7 +10,6 @@
 
 #define LINE_SIZE 32
 
-
 struct line
 {
 	uint32_t r;
@@ -29,8 +28,6 @@ void init_led(void)
 {
 	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
 	my_frame.top[0].r = 0x80000000;
-	my_frame.bottom[0].r = 0x80000000;
-
 }
 
 void fill_line(uint32_t line_num)
@@ -40,7 +37,7 @@ void fill_line(uint32_t line_num)
 	for(uint32_t row_index =  0; row_index < LINE_SIZE; row_index++)
 	{
 		HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, my_frame.top[line_num].r>>(31-row_index)&1);
-		//HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, my_frame.bottom[line_num].r>>31);
+		HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, my_frame.bottom[line_num].r>>(31-row_index)&1);
 		HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, GPIO_PIN_SET);
 		//HAL_Delay(1); // just go as fast as we can fk it
 		HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, GPIO_PIN_RESET);
@@ -73,15 +70,24 @@ void led_crawler(void)
 	static uint32_t direction = 0;
 
 	fill_all_lines();
-	if(!direction && my_frame.top[line_index%8].r!=1)
-		my_frame.top[line_index%8].r >>= 1;
-	else if(direction && my_frame.top[line_index%8].r != 0x80000000)
-		my_frame.top[line_index%8].r <<= 1;
+
+
+	struct line* lines = my_frame.top;
+	uint32_t index = line_index % 16;
+
+	if (!direction && lines[index].r != 1)
+		lines[index].r >>= 1;
+	else if (direction && lines[index].r != 0x80000000)
+		lines[index].r <<= 1;
 	else
 	{
-		direction = !direction;
-		my_frame.top[(line_index+1)%8].r = my_frame.top[line_index%8].r;
 		line_index++;
+		if(line_index == 8);
+			//lines = my_frame.bottom;
+		direction = !direction;
+		lines[(index + 1) % 16].r = lines[index].r;
+		lines[index].r = 0;
+
 	}
 
 }
