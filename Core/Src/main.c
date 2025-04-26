@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -50,10 +51,8 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void fill_lines(uint32_t line_num);
 void init_led(void);
-void refresh_frame(void);
-void led_crawler(void);
+void led_loop();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -91,6 +90,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   init_led();
 
@@ -100,7 +100,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  led_crawler();
+	  led_loop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

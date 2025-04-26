@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "main.h"
 #include <stdio.h>
+#include "tim.h"
 
 #define LINE_SIZE 32
 
@@ -20,14 +21,27 @@ struct frame
 	struct line bottom[8];
 };
 
+typedef enum
+{
+  MATRIX_RDY       = 0x00U,
+  MATRIX_BUSY,
+  MATRIX_FILL_DATA
+} state;
+
+state current_state;
+
 struct frame my_frame;
 
 void set_line(uint32_t line_num);
+void led_crawler(void);
 
 void init_led(void)
 {
+	current_state = MATRIX_RDY;
 	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
 	my_frame.top[0].r = 0x80000000;
+	// do not immediately go into interrupt
+	htim2.Instance->SR = 0;
 }
 
 void fill_lines(uint32_t line_num)
@@ -36,17 +50,21 @@ void fill_lines(uint32_t line_num)
 	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_SET); // deactivate led matrix
 	for(uint32_t row_index =  0; row_index < LINE_SIZE; row_index++)
 	{
+		// set red data
 		HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, my_frame.top[line_num].r>>(31-row_index)&1);
 		HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, my_frame.bottom[line_num].r>>(31-row_index)&1);
+
+		// "clock" for shift register
 		HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, GPIO_PIN_SET);
-		//HAL_Delay(1); // just go as fast as we can fk it
+		// just go as fast as we can fk it
 		HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, GPIO_PIN_RESET);
-		//HAL_Delay(1);
 	}
 	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_RESET); // activate led matrix
+
 	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_SET);
-	HAL_Delay(1); // maintain latch for a little
-	HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
+	// maintain latch for a little
+	current_state = MATRIX_BUSY;
+	HAL_TIM_Base_Start_IT(&htim2);
 }
 
 void set_line(uint32_t line_num)
@@ -57,19 +75,55 @@ void set_line(uint32_t line_num)
 	HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, line_num & 0b100);
 }
 
-void refresh_frame(void)
+void fill_all_lines()
 {
-	for(uint32_t index = 0; index < 8; index++)
+	static uint32_t line_idx = 0;
+	if(line_idx != 8)
 	{
-		  fill_lines(index);
+		fill_lines(line_idx);
+		line_idx++;
+	}
+	else
+	{
+		line_idx = 0;
+		current_state = MATRIX_FILL_DATA;
 	}
 }
+
+void led_loop()
+{
+	switch (current_state) {
+		case MATRIX_RDY:
+			fill_all_lines();
+			break;
+
+		case MATRIX_BUSY:
+			// Do other stuff
+			break;
+
+		case MATRIX_FILL_DATA:
+			// update frame here
+			led_crawler();
+			current_state = MATRIX_RDY;
+			break;
+	}
+
+}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim == &htim2)
+	{
+		HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, GPIO_PIN_RESET);
+		HAL_TIM_Base_Stop_IT(&htim2);
+		htim2.Instance->CNT = 0;  // reset timer to 0
+		current_state = MATRIX_RDY;
+	}
+}
+
 void led_crawler(void)
 {
 	static uint32_t line_index = 0;
 	static uint32_t direction = 0;
-
-	refresh_frame();
 
 	struct line* line = my_frame.top; // start at top of display
 	uint32_t index = line_index % 16; // run through 16 lines in loop
@@ -86,4 +140,9 @@ void led_crawler(void)
 		line[(index + 1) % 16].r = line[index].r; 	// stay on same same x coordinate
 		line[index].r = 0;							// turn off led on previous line
 	}
+}
+
+// TODO: write implementation for this
+void display_time()
+{
 }
