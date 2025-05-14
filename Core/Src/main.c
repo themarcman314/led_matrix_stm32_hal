@@ -53,6 +53,8 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void init_led(void);
 void led_loop();
+void Display_time_init(uint8_t hour, uint8_t minute);
+void display_time();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -94,6 +96,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   init_led();
 
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -101,6 +104,7 @@ int main(void)
   while (1)
   {
 	  led_loop();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

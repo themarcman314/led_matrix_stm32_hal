@@ -8,6 +8,8 @@
 #include "main.h"
 #include <stdio.h>
 #include "tim.h"
+#include "led_bitmap.h"
+
 
 #define LINE_SIZE 32
 
@@ -34,6 +36,7 @@ struct frame my_frame;
 
 void set_line(uint32_t line_num);
 void led_crawler(void);
+void Display_time_set(uint8_t hour, uint8_t minute);
 
 void init_led(void)
 {
@@ -102,8 +105,11 @@ void led_loop()
 			break;
 
 		case MATRIX_FILL_DATA:
+			Display_time_set(1,1);
 			// update frame here
-			led_crawler();
+			//led_crawler();
+
+
 			current_state = MATRIX_RDY;
 			break;
 	}
@@ -143,6 +149,40 @@ void led_crawler(void)
 }
 
 // TODO: write implementation for this
-void display_time()
+void Display_time_set(uint8_t hour, uint8_t minute)
 {
+	switch (hour) {
+		case 0:
+			NUMBER_0
+			break;
+		case 1:
+			NUMBER_1
+			break;
+		case 2:
+			NUMBER_2
+			break;
+		case 3:
+			NUMBER_3
+			break;
+		case 4:
+			NUMBER_4
+			break;
+		case 5:
+			NUMBER_5
+			break;
+		case 6:
+			NUMBER_6
+			break;
+		case 7:
+			NUMBER_7
+			break;
+		case 8:
+			NUMBER_8
+			break;
+		case 9:
+			NUMBER_9
+			break;
+		default:
+			break;
+	}
 }
